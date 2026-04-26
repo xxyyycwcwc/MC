@@ -2,12 +2,10 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>🕷️ 蜘蛛纸牌 · 灵活拖拽版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, shrink-to-fit=no">
+    <title>🕷️ 蜘蛛纸牌 & 💣 扫雷 · 增强版</title>
     <style>
         :root {
-            --bg: #1a5c30;
-            --felt: #1e7e44;
             --card-w: 72px;
             --card-h: 100px;
             --down-os: 20px;
@@ -19,16 +17,16 @@
             --text: #e8e0d0;
             --btn-bg: rgba(0, 0, 0, 0.4);
             --border: rgba(255, 255, 255, 0.15);
+            --felt: #1e7e44;
         }
 
         @media (max-width: 600px) {
             :root {
-                --card-w: 55px;
-                --card-h: 78px;
-                --down-os: 15px;
-                --up-os: 24px;
-                --col-gap: 3px;
-                --radius: 5px;
+                --card-w: 46px;
+                --card-h: 68px;
+                --down-os: 13px;
+                --up-os: 20px;
+                --col-gap: 2px;
             }
         }
 
@@ -39,57 +37,92 @@
         }
 
         body {
-            background: linear-gradient(145deg, #0f3d1f 0%, #1a5c30 50%, #0a2d15 100%);
-            min-height: 100vh;
+            background: #0a2d15;
             font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: flex-start;
             padding: 8px;
             user-select: none;
             -webkit-user-select: none;
-            touch-action: manipulation;
+            touch-action: pan-x pinch-zoom;
             -webkit-tap-highlight-color: transparent;
-            overflow-y: auto;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
         }
 
-        .game-wrapper {
+        .app-container {
             width: 100%;
             max-width: 1100px;
             display: flex;
             flex-direction: column;
             gap: 6px;
-            min-height: 95vh;
+            height: 100%;
+            overflow: hidden;
         }
 
-        /* 顶栏 */
+        .game-switch {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 24px;
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .switch-btn {
+            padding: 6px 18px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            background: var(--btn-bg);
+            color: var(--text);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+        .switch-btn.active {
+            background: var(--gold);
+            color: #1a1a1a;
+            border-color: var(--gold);
+        }
+        .game-panel {
+            display: none;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+            overflow: hidden;
+        }
+        .game-panel.active {
+            display: flex;
+        }
+
+        /* 蜘蛛纸牌 */
         .top-bar {
             display: flex;
             flex-wrap: wrap;
             align-items: center;
             gap: 6px;
-            padding: 10px 12px;
+            padding: 8px 10px;
             background: rgba(0, 0, 0, 0.35);
             backdrop-filter: blur(8px);
             border-radius: 14px;
             border: 1px solid var(--border);
+            flex-shrink: 0;
         }
-        .title {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: var(--goldL);
-            letter-spacing: 1px;
-            white-space: nowrap;
-            margin-right: 4px;
-        }
-        select,
-        .btn {
-            padding: 6px 12px;
-            border-radius: 20px;
+        .btn,
+        select {
+            padding: 5px 10px;
+            border-radius: 16px;
             border: 1px solid var(--border);
             background: var(--btn-bg);
             color: var(--text);
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             cursor: pointer;
             font-weight: 500;
             transition: all 0.2s;
@@ -100,9 +133,6 @@
             display: inline-flex;
             align-items: center;
             gap: 3px;
-        }
-        .btn:active {
-            transform: scale(0.94);
         }
         .btn.accent {
             background: var(--gold);
@@ -115,33 +145,31 @@
         .stat {
             color: var(--text);
             font-weight: 600;
-            font-size: 0.8rem;
-            padding: 6px 10px;
+            font-size: 0.75rem;
+            padding: 4px 8px;
             background: rgba(0, 0, 0, 0.25);
-            border-radius: 20px;
+            border-radius: 16px;
             white-space: nowrap;
-            letter-spacing: 0.4px;
         }
         .spacer {
             flex: 1;
         }
-
-        /* 完成区 */
         .completed-area {
             display: flex;
             flex-wrap: wrap;
             align-items: center;
             gap: 4px;
-            padding: 6px 10px;
+            padding: 4px 8px;
             background: rgba(0, 0, 0, 0.25);
             border-radius: 12px;
-            min-height: 38px;
+            min-height: 30px;
             justify-content: center;
             border: 2px dashed rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
         }
         .completed-stack {
-            width: 26px;
-            height: 34px;
+            width: 22px;
+            height: 30px;
             background: linear-gradient(145deg, #f5f0e0, #d5cfb8);
             border-radius: 3px;
             border: 2px solid #b8a878;
@@ -153,18 +181,18 @@
             font-weight: 700;
             color: #333;
         }
-
-        /* 游戏区域 */
         .game-area {
             display: flex;
             gap: var(--col-gap);
             justify-content: center;
             flex: 1;
-            padding: 10px 6px 20px;
+            padding: 10px 6px 10px;
             overflow-x: auto;
             overflow-y: visible;
-            min-height: 380px;
+            min-height: 0;
             align-items: flex-start;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
         }
         .column {
             position: relative;
@@ -177,25 +205,13 @@
         .column.empty-column {
             border: 2px dashed rgba(255, 255, 255, 0.2);
             background: rgba(0, 0, 0, 0.15);
-            min-height: calc(var(--card-h) + 30px);
-            border-radius: var(--radius);
+            min-height: calc(var(--card-h) + 20px);
         }
-        .column.empty-column.highlight-drop {
+        .column.highlight-drop {
             border-color: var(--goldL) !important;
             background: rgba(212, 160, 23, 0.2) !important;
             box-shadow: 0 0 20px rgba(240, 199, 94, 0.35);
-            animation: pulse 0.8s ease-in-out infinite;
         }
-        @keyframes pulse {
-            0%,
-            100% {
-                box-shadow: 0 0 18px rgba(240, 199, 94, 0.3);
-            }
-            50% {
-                box-shadow: 0 0 30px rgba(240, 199, 94, 0.6);
-            }
-        }
-
         .card {
             position: absolute;
             left: 0;
@@ -219,15 +235,12 @@
             box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
             display: flex;
             flex-direction: column;
-            padding: 4px 6px;
+            padding: 3px 4px;
             font-weight: 700;
             line-height: 1;
         }
-        .card.face-up:hover {
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
-        }
         .card .corner {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             letter-spacing: -0.5px;
         }
         .card .center {
@@ -235,15 +248,15 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.6rem;
+            font-size: 1.4rem;
             opacity: 0.8;
         }
         @media (max-width: 600px) {
             .card .corner {
-                font-size: 0.55rem;
+                font-size: 0.45rem;
             }
             .card .center {
-                font-size: 1.1rem;
+                font-size: 0.9rem;
             }
         }
         .card.red {
@@ -262,20 +275,19 @@
             z-index: 91 !important;
             border-color: #8cf !important;
         }
-
-        /* 发牌区 */
         .stock-area {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 12px;
-            padding: 8px;
+            gap: 10px;
+            padding: 6px;
+            flex-shrink: 0;
         }
         .stock-piles {
             display: flex;
             gap: 2px;
             cursor: pointer;
-            padding: 6px 12px;
+            padding: 5px 10px;
             border-radius: 12px;
             background: rgba(0, 0, 0, 0.25);
             border: 2px solid transparent;
@@ -287,20 +299,95 @@
             pointer-events: none;
         }
         .stock-piles .mini {
-            width: 24px;
-            height: 30px;
+            width: 20px;
+            height: 26px;
             background: linear-gradient(145deg, #2c5f8a, #1a3f5c);
             border: 1.5px solid #3a7db5;
             border-radius: 3px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
         }
+
+        /* 扫雷 */
+        .mines-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .mines-board {
+            display: grid;
+            gap: 1px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            overflow: hidden;
+            justify-content: center;
+            margin: 0 auto;
+            flex: 1;
+            width: fit-content;
+        }
+        .cell {
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(145deg, #4a6b4a, #2a4a2a);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: background 0.1s;
+            color: #ccc;
+        }
         @media (max-width: 600px) {
-            .stock-piles .mini {
-                width: 18px;
-                height: 23px;
+            .cell {
+                width: 24px;
+                height: 24px;
+                font-size: 0.65rem;
             }
         }
+        .cell.revealed {
+            background: #1a3a1a;
+            border-color: #2a5a2a;
+        }
+        .cell.flagged {
+            background: #5a3a1a;
+        }
+        .cell.mine {
+            background: #a03030;
+        }
+        .num1 {
+            color: #55aaff;
+        }
+        .num2 {
+            color: #55cc55;
+        }
+        .num3 {
+            color: #dd5555;
+        }
+        .num4 {
+            color: #aa44aa;
+        }
+        .num5 {
+            color: #cc6600;
+        }
+        .num6 {
+            color: #44aaaa;
+        }
+        .num7 {
+            color: #666666;
+        }
+        .num8 {
+            color: #999999;
+        }
 
+        /* Toast 与弹窗 */
         .toast {
             position: fixed;
             top: 20px;
@@ -320,8 +407,6 @@
         .toast.show {
             opacity: 1;
         }
-
-        /* 统计弹窗 */
         .stats-overlay {
             position: fixed;
             inset: 0;
@@ -371,69 +456,109 @@
     </style>
 </head>
 <body>
-    <div class="game-wrapper">
-        <!-- 顶栏 -->
-        <div class="top-bar">
-            <span class="title">🕷️蜘蛛纸牌</span>
-            <select id="diffSelect" title="难度">
-                <option value="1">🟢1花色</option>
-                <option value="2" selected>🟡2花色</option>
-                <option value="4">🔴4花色</option>
-            </select>
-            <button class="btn accent" id="btnNew">🔄新游戏</button>
-            <button class="btn" id="btnUndo">↩撤销</button>
-            <button class="btn" id="btnHint">💡提示</button>
-            <button class="btn" id="btnShuffle">🌀洗牌</button>
-            <button class="btn" id="btnStats">📊记录</button>
-            <span class="spacer"></span>
-            <span class="timer" id="timerDisplay">⏱00:00</span>
-            <span class="score">⭐<span id="scoreDisplay">500</span></span>
-            <span class="stat">🏆<span id="completeDisplay">0</span>/8</span>
+    <div class="app-container">
+        <!-- 游戏切换 -->
+        <div class="game-switch">
+            <button class="switch-btn active" id="switchSpider">🕷️ 蜘蛛纸牌</button>
+            <button class="switch-btn" id="switchMines">💣 扫雷</button>
         </div>
 
-        <!-- 完成区 -->
-        <div class="completed-area" id="completedArea"></div>
+        <!-- 蜘蛛纸牌面板 -->
+        <div class="game-panel active" id="spiderPanel">
+            <div class="top-bar">
+                <select id="diffSelect">
+                    <option value="1">🟢1花色</option>
+                    <option value="2" selected>🟡2花色</option>
+                    <option value="4">🔴4花色</option>
+                </select>
+                <button class="btn accent" id="btnNew">🔄新游戏</button>
+                <button class="btn" id="btnUndo">↩撤销</button>
+                <button class="btn" id="btnHint">💡提示</button>
+                <button class="btn" id="btnShuffle">🌀洗牌</button>
+                <button class="btn" id="btnStatsSpider">📊记录</button>
+                <span class="spacer"></span>
+                <span class="timer" id="timerDisplay">⏱00:00</span>
+                <span class="score">⭐<span id="scoreDisplay">500</span></span>
+                <span class="stat">🏆<span id="completeDisplay">0</span>/8</span>
+            </div>
+            <div class="completed-area" id="completedArea"></div>
+            <div class="game-area" id="gameArea"></div>
+            <div class="stock-area">
+                <div class="stock-piles" id="stockPiles"></div>
+                <span class="score" id="stockLabel">剩余5次</span>
+            </div>
+        </div>
 
-        <!-- 游戏区 -->
-        <div class="game-area" id="gameArea"></div>
-
-        <!-- 发牌区 -->
-        <div class="stock-area">
-            <div class="stock-piles" id="stockPiles" title="发牌"></div>
-            <span class="score" id="stockLabel">剩余5次</span>
+        <!-- 扫雷面板 -->
+        <div class="game-panel" id="minesPanel">
+            <div class="mines-top">
+                <select id="mineDiff">
+                    <option value="easy">🟢 初级 8×8 10雷</option>
+                    <option value="medium" selected>🟡 中级 16×16 40雷</option>
+                    <option value="hard">🔴 高级 16×30 99雷</option>
+                </select>
+                <span id="mineTimer">⏱00:00</span>
+                <span>💣 <span id="mineCount">40</span></span>
+                <button class="btn" id="btnMineNew">🔄新游戏</button>
+                <button class="btn" id="btnToggleMode">🔍挖掘 / 🚩标记</button>
+                <button class="btn" id="btnStatsMines">📊记录</button>
+            </div>
+            <div class="mines-board" id="minesBoard" style="overflow:auto; max-height:100%;"></div>
         </div>
     </div>
 
+    <!-- Toast -->
     <div class="toast" id="toast"></div>
 
-    <!-- 统计弹窗 -->
+    <!-- 统计弹窗（动态填充） -->
     <div class="stats-overlay" id="statsOverlay">
-        <div class="stats-dialog">
-            <h3>📊 游戏记录</h3>
-            <div class="stat-row"><span>总局数</span><span id="statGames">0</span></div>
-            <div class="stat-row"><span>胜利</span><span id="statWins">0</span></div>
-            <div class="stat-row"><span>胜率</span><span id="statRate">-</span></div>
-            <div class="stat-row"><span>最高分</span><span id="statBest">0</span></div>
-            <div class="stat-row"><span>总得分</span><span id="statTotal">0</span></div>
-            <button class="close-stats" id="closeStats">关闭</button>
-        </div>
+        <div class="stats-dialog" id="statsContent"></div>
     </div>
 
     <script>
         (function() {
-            // ========== 常量 ==========
+            // ==================== 全局工具 ====================
+            const toast = document.getElementById('toast');
+
+            function showToast(msg, dur = 1800) {
+                toast.textContent = msg;
+                toast.classList.add('show');
+                clearTimeout(toast._timeout);
+                toast._timeout = setTimeout(() => toast.classList.remove('show'), dur);
+            }
+
+            // ==================== 游戏切换 ====================
+            const switchSpider = document.getElementById('switchSpider');
+            const switchMines = document.getElementById('switchMines');
+            const spiderPanel = document.getElementById('spiderPanel');
+            const minesPanel = document.getElementById('minesPanel');
+
+            switchSpider.addEventListener('click', () => {
+                switchSpider.classList.add('active');
+                switchMines.classList.remove('active');
+                spiderPanel.classList.add('active');
+                minesPanel.classList.remove('active');
+            });
+            switchMines.addEventListener('click', () => {
+                switchMines.classList.add('active');
+                switchSpider.classList.remove('active');
+                minesPanel.classList.add('active');
+                spiderPanel.classList.remove('active');
+                if (!minesGame.initialized) minesGame.init('medium');
+            });
+
+            // ==================== 蜘蛛纸牌逻辑 ====================
             const SUITS = ['♠', '♥', '♦', '♣'];
             const COLORS = { '♠': 'black', '♥': 'red', '♦': 'red', '♣': 'black' };
             const RANK_NAMES = { 1: 'A', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9: '9', 10: '10', 11: 'J',
                 12: 'Q', 13: 'K' };
-            const COLS = 10;
-            const FRONT_COLS = 4;
-            const CARDS_FRONT = 6;
-            const CARDS_BACK = 5;
-            const COMPLETE_NEED = 8;
-            const DEAL = 10;
+            const COLS = 10,
+                FRONT_COLS = 4,
+                CARDS_FRONT = 6,
+                CARDS_BACK = 5,
+                COMPLETE_NEED = 8,
+                DEAL = 10;
 
-            // ========== DOM ==========
             const gameArea = document.getElementById('gameArea');
             const stockPiles = document.getElementById('stockPiles');
             const stockLabel = document.getElementById('stockLabel');
@@ -441,40 +566,35 @@
             const completeDisplay = document.getElementById('completeDisplay');
             const completedArea = document.getElementById('completedArea');
             const timerDisplay = document.getElementById('timerDisplay');
-            const toast = document.getElementById('toast');
             const diffSelect = document.getElementById('diffSelect');
             const btnNew = document.getElementById('btnNew');
             const btnUndo = document.getElementById('btnUndo');
             const btnHint = document.getElementById('btnHint');
             const btnShuffle = document.getElementById('btnShuffle');
-            const btnStats = document.getElementById('btnStats');
+            const btnStatsSpider = document.getElementById('btnStatsSpider');
             const statsOverlay = document.getElementById('statsOverlay');
-            const closeStats = document.getElementById('closeStats');
+            const statsContent = document.getElementById('statsContent');
 
-            // ========== 状态 ==========
-            let columns = [];
-            let stock = [];
-            let completed = 0;
-            let score = 500;
-            let selectedCol = null;
-            let selectedStart = null;
-            let history = [];
-            let difficulty = 2;
-            let gameOver = false;
-            let timerSec = 0;
-            let timerInterval = null;
-            let hintActive = false;
+            let columns = [],
+                stock = [],
+                completed = 0,
+                score = 500,
+                selectedCol = null,
+                selectedStart = null,
+                history = [],
+                difficulty = 2,
+                gameOver = false,
+                timerSec = 0,
+                timerInterval = null,
+                hintActive = false;
 
-            // ========== 工具函数 ==========
             function createDeck(numSuits) {
                 const deck = [];
                 const suitsToUse = SUITS.slice(0, numSuits);
                 const groupsPerSuit = COMPLETE_NEED / numSuits;
-                for (const s of suitsToUse) {
-                    for (let g = 0; g < groupsPerSuit; g++) {
+                for (const s of suitsToUse)
+                    for (let g = 0; g < groupsPerSuit; g++)
                         for (let r = 1; r <= 13; r++) deck.push({ suit: s, rank: r, faceUp: false });
-                    }
-                }
                 return deck;
             }
 
@@ -500,14 +620,6 @@
                 if (history.length > 200) history.shift();
             }
 
-            function showToast(msg, dur = 1800) {
-                toast.textContent = msg;
-                toast.classList.add('show');
-                clearTimeout(toast._timeout);
-                toast._timeout = setTimeout(() => toast.classList.remove('show'), dur);
-            }
-
-            // ========== 计时器 ==========
             function startTimer() {
                 stopTimer();
                 timerSec = 0;
@@ -520,70 +632,74 @@
                 }, 1000);
             }
 
-            function stopTimer() {
-                if (timerInterval) clearInterval(timerInterval);
-                timerInterval = null;
-            }
+            function stopTimer() { if (timerInterval) clearInterval(timerInterval);
+                timerInterval = null; }
 
             function updateTimerDisplay() {
-                const m = Math.floor(timerSec / 60);
-                const s = timerSec % 60;
+                const m = Math.floor(timerSec / 60),
+                    s = timerSec % 60;
                 timerDisplay.textContent = '⏱' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
             }
 
-            // ========== 统计 ==========
-            function loadStats() {
+            function loadSpiderStats() {
                 return {
                     games: parseInt(localStorage.getItem('ss_games') || '0'),
                     wins: parseInt(localStorage.getItem('ss_wins') || '0'),
                     best: parseInt(localStorage.getItem('ss_best') || '0'),
-                    totalScore: parseInt(localStorage.getItem('ss_total') || '0')
+                    totalScore: parseInt(localStorage.getItem('ss_total') || '0'),
+                    bestTime: parseInt(localStorage.getItem('ss_besttime') || '999999')
                 };
             }
 
-            function saveStats(stats) {
-                localStorage.setItem('ss_games', stats.games);
-                localStorage.setItem('ss_wins', stats.wins);
-                localStorage.setItem('ss_best', stats.best);
-                localStorage.setItem('ss_total', stats.totalScore);
+            function saveSpiderStats(s) {
+                localStorage.setItem('ss_games', s.games);
+                localStorage.setItem('ss_wins', s.wins);
+                localStorage.setItem('ss_best', s.best);
+                localStorage.setItem('ss_total', s.totalScore);
+                localStorage.setItem('ss_besttime', s.bestTime);
             }
 
-            function recordGame(won) {
-                const s = loadStats();
+            function recordSpiderGame(won) {
+                const s = loadSpiderStats();
                 s.games++;
                 if (won) {
                     s.wins++;
                     s.totalScore += score;
                     if (score > s.best) s.best = score;
+                    if (timerSec < s.bestTime) s.bestTime = timerSec;
                 }
-                saveStats(s);
+                saveSpiderStats(s);
             }
 
-            function showStatsDialog() {
-                const s = loadStats();
-                document.getElementById('statGames').textContent = s.games;
-                document.getElementById('statWins').textContent = s.wins;
-                document.getElementById('statRate').textContent = s.games > 0 ? (s.wins / s.games * 100).toFixed(1) +
-                    '%' : '-';
-                document.getElementById('statBest').textContent = s.best;
-                document.getElementById('statTotal').textContent = s.totalScore;
+            function showSpiderStats() {
+                const s = loadSpiderStats();
+                const bestTimeStr = s.bestTime === 999999 ? '--' :
+                    Math.floor(s.bestTime / 60) + '分' + (s.bestTime % 60) + '秒';
+                statsContent.innerHTML = `
+                    <h3>🕷️ 蜘蛛纸牌记录</h3>
+                    <div class="stat-row"><span>总局数</span><span>${s.games}</span></div>
+                    <div class="stat-row"><span>胜利</span><span>${s.wins}</span></div>
+                    <div class="stat-row"><span>胜率</span><span>${s.games>0?(s.wins/s.games*100).toFixed(1)+'%':'-'}</span></div>
+                    <div class="stat-row"><span>最高分</span><span>${s.best}</span></div>
+                    <div class="stat-row"><span>最快时间</span><span>${bestTimeStr}</span></div>
+                    <button class="close-stats" id="closeSpiderStats">关闭</button>
+                `;
                 statsOverlay.classList.add('show');
+                document.getElementById('closeSpiderStats').addEventListener('click', () => statsOverlay.classList.remove(
+                    'show'));
             }
 
-            // ========== 游戏逻辑 ==========
-            // 检查从startIdx开始到末尾是否构成有效序列（面朝上、同花色、连续递减）
+            // 游戏逻辑
             function isValidSeqFrom(colIdx, startIdx) {
                 const col = columns[colIdx];
                 if (startIdx < 0 || startIdx >= col.length || !col[startIdx].faceUp) return false;
                 for (let i = startIdx; i < col.length - 1; i++) {
-                    if (!col[i].faceUp || !col[i + 1].faceUp) return false;
-                    if (col[i].suit !== col[i + 1].suit) return false;
-                    if (col[i].rank !== col[i + 1].rank + 1) return false;
+                    if (!col[i].faceUp || !col[i + 1].faceUp || col[i].suit !== col[i + 1].suit || col[i].rank !== col[i +
+                            1].rank + 1) return false;
                 }
                 return true;
             }
 
-            // 找到列中最上面的有效序列起始索引（点击空白列时使用）
             function findTopValidStart(colIdx) {
                 const col = columns[colIdx];
                 if (!col.length) return null;
@@ -593,7 +709,6 @@
                     else break;
                 }
                 if (firstUp === -1) return null;
-                // 从firstUp开始检查完整序列
                 let start = col.length - 1;
                 for (let i = col.length - 2; i >= firstUp; i--) {
                     if (col[i].faceUp && col[i].suit === col[i + 1].suit && col[i].rank === col[i + 1].rank + 1) start = i;
@@ -606,8 +721,7 @@
                 if (!movingCards.length) return false;
                 const target = columns[targetIdx];
                 if (!target.length) return true;
-                const top = target[target.length - 1];
-                return top.rank === movingCards[0].rank + 1;
+                return target[target.length - 1].rank === movingCards[0].rank + 1;
             }
 
             function moveCards(fromIdx, toIdx, startIdx) {
@@ -683,43 +797,29 @@
                 return true;
             }
 
-            // 洗牌功能：将所有面朝上的牌收集打乱，再按原分布放回
             function reshuffleFaceUp() {
                 if (gameOver) return false;
-                // 收集所有面朝上牌及其所在列和位置信息
-                const faceUpCards = [];
-                const positions = []; // { colIdx, count }
+                const faceUpCards = [],
+                    positions = [];
                 for (let i = 0; i < COLS; i++) {
-                    let count = 0;
+                    let cnt = 0;
                     for (let j = columns[i].length - 1; j >= 0; j--) {
-                        if (columns[i][j].faceUp) {
-                            faceUpCards.push(columns[i][j]);
-                            count++;
-                        } else break;
+                        if (columns[i][j].faceUp) { faceUpCards.push(columns[i][j]);
+                            cnt++; } else break;
                     }
-                    positions.push({ colIdx: i, count });
+                    positions.push({ colIdx: i, count: cnt });
                 }
-                if (faceUpCards.length === 0) {
-                    showToast('没有可洗的牌');
-                    return false;
-                }
-                // 打乱
+                if (!faceUpCards.length) { showToast('无牌可洗');
+                    return false; }
                 const shuffled = shuffle(faceUpCards);
-                // 按原数量放回每列
                 let idx = 0;
                 for (const pos of positions) {
                     const col = columns[pos.colIdx];
-                    // 移除原本的面朝上牌
                     col.splice(col.length - pos.count);
-                    // 放入新的
-                    for (let j = 0; j < pos.count; j++) {
-                        if (idx < shuffled.length) {
-                            col.push(shuffled[idx]);
-                            idx++;
-                        }
-                    }
+                    for (let j = 0; j < pos.count; j++)
+                        if (idx < shuffled.length) col.push(shuffled[idx++]);
                 }
-                score = Math.max(0, score - 50); // 扣分
+                score = Math.max(0, score - 50);
                 clearSelection();
                 return true;
             }
@@ -728,21 +828,40 @@
                 if (completed >= COMPLETE_NEED && !gameOver) {
                     gameOver = true;
                     stopTimer();
-                    recordGame(true);
-                    setTimeout(() => {
-                        showToast(`🎉 恭喜！得分 ${score}`, 3000);
-                    }, 300);
+                    recordSpiderGame(true);
+                    setTimeout(() => showToast('🎉 恭喜！得分 ' + score, 3000), 300);
                 }
             }
 
-            // ========== 提示系统 ==========
+            function hasValidMoves() {
+                for (let src = 0; src < COLS; src++) {
+                    const start = findTopValidStart(src);
+                    if (start === null) continue;
+                    const moving = columns[src].slice(start);
+                    for (let dst = 0; dst < COLS; dst++) {
+                        if (dst === src) continue;
+                        if (canPlaceOn(dst, moving)) return true;
+                    }
+                }
+                return false;
+            }
+
+            function checkDeadEnd() {
+                if (!gameOver && !stock.length && !hasValidMoves()) {
+                    gameOver = true;
+                    stopTimer();
+                    recordSpiderGame(false);
+                    showToast('😵 死局！无路可走，请撤销或重新开始', 3000);
+                }
+            }
+
             function clearHint() {
                 hintActive = false;
                 document.querySelectorAll('.hint-source, .hint-target').forEach(el => el.classList.remove('hint-source',
                     'hint-target'));
             }
 
-            function findHint() {
+            function findOneHint() {
                 for (let src = 0; src < COLS; src++) {
                     const start = findTopValidStart(src);
                     if (start === null) continue;
@@ -761,7 +880,7 @@
 
             function applyHint() {
                 clearHint();
-                const hint = findHint();
+                const hint = findOneHint();
                 if (!hint) {
                     showToast('无可用的移动，尝试洗牌或发牌');
                     return;
@@ -774,181 +893,24 @@
                 const dstCol = gameArea.querySelector(`.column[data-colindex="${hint.dst}"]`);
                 if (srcCol) {
                     const cards = srcCol.querySelectorAll('.card.face-up');
-                    for (let i = hint.start; i < columns[hint.src].length; i++) {
+                    for (let i = hint.start; i < columns[hint.src].length; i++)
                         if (cards[i]) cards[i].classList.add('hint-source');
-                    }
                 }
                 if (dstCol) dstCol.classList.add('hint-target', 'highlight-drop');
                 showToast('💡 提示：点击目标列移动');
             }
 
-            // ========== 渲染 ==========
-            function getDownOffset() {
-                const style = getComputedStyle(document.documentElement);
-                return parseInt(style.getPropertyValue('--down-os').trim()) || 20;
-            }
-
-            function getUpOffset() {
-                const style = getComputedStyle(document.documentElement);
-                return parseInt(style.getPropertyValue('--up-os').trim()) || 32;
-            }
-
-            function getCardW() {
-                const style = getComputedStyle(document.documentElement);
-                return parseInt(style.getPropertyValue('--card-w').trim()) || 72;
-            }
-
-            function getCardH() {
-                const style = getComputedStyle(document.documentElement);
-                return parseInt(style.getPropertyValue('--card-h').trim()) || 100;
-            }
-
-            function render() {
-                gameArea.innerHTML = '';
-                for (let i = 0; i < COLS; i++) {
-                    const col = columns[i];
-                    const colDiv = document.createElement('div');
-                    colDiv.className = 'column';
-                    colDiv.dataset.colindex = i;
-                    if (col.length === 0) colDiv.classList.add('empty-column');
-
-                    let top = 0;
-                    for (let j = 0; j < col.length; j++) {
-                        const card = col[j];
-                        const cardDiv = document.createElement('div');
-                        cardDiv.className = 'card';
-                        cardDiv.style.top = top + 'px';
-                        cardDiv.dataset.colindex = i;
-                        cardDiv.dataset.cardindex = j;
-
-                        if (card.faceUp) {
-                            cardDiv.classList.add('face-up', COLORS[card.suit]);
-                            cardDiv.innerHTML = `
-                                <div class="corner">${RANK_NAMES[card.rank]}<br>${card.suit}</div>
-                                <div class="center">${card.suit}</div>
-                            `;
-                            if (i === selectedCol && j >= selectedStart && selectedStart !== null) {
-                                cardDiv.classList.add('selected');
-                            }
-                            cardDiv.addEventListener('click', (e) => {
-                                e.stopPropagation();
-                                clearHint();
-                                handleCardClick(i, j);
-                            });
-                            cardDiv.addEventListener('pointerdown', (e) => {
-                                if (e.pointerType !== 'mouse' && e.pointerType !== 'touch') return;
-                                if (e.button !== undefined && e.button !== 0) return;
-                                e.preventDefault();
-                                handleDragStart(e, i, j);
-                            });
-                            top += getUpOffset();
-                        } else {
-                            cardDiv.classList.add('face-down');
-                            top += getDownOffset();
-                        }
-                        colDiv.appendChild(cardDiv);
-                    }
-
-                    if (col.length === 0) {
-                        colDiv.style.height = 'calc(var(--card-h) + 30px)';
-                    } else {
-                        colDiv.style.height = (top + 10) + 'px';
-                    }
-
-                    colDiv.addEventListener('click', (e) => {
-                        if (e.target === colDiv) {
-                            clearHint();
-                            handleColumnEmptyClick(i);
-                        }
-                    });
-                    gameArea.appendChild(colDiv);
-                }
-
-                // 高亮空列
-                if (selectedCol !== null && selectedStart !== null) {
-                    const moving = columns[selectedCol].slice(selectedStart);
-                    document.querySelectorAll('.column.empty-column').forEach(ec => {
-                        const idx = parseInt(ec.dataset.colindex);
-                        if (canPlaceOn(idx, moving)) ec.classList.add('highlight-drop');
-                    });
-                }
-
-                updateCompletedArea();
-                updateStockDisplay();
-                scoreDisplay.textContent = score;
-                completeDisplay.textContent = completed;
-                checkWin();
-            }
-
-            function updateCompletedArea() {
-                completedArea.querySelectorAll('.completed-stack').forEach(el => el.remove());
-                for (let i = 0; i < completed; i++) {
-                    const s = document.createElement('div');
-                    s.className = 'completed-stack';
-                    s.textContent = 'K-A';
-                    completedArea.appendChild(s);
-                }
-                if (!completedArea.querySelector('.label')) {
-                    const lbl = document.createElement('span');
-                    lbl.className = 'label';
-                    lbl.style.color = 'rgba(255,255,255,0.5)';
-                    lbl.style.fontSize = '0.75rem';
-                    lbl.textContent = '已完成';
-                    completedArea.prepend(lbl);
-                }
-            }
-
-            function updateStockDisplay() {
-                const remain = stock.length ? Math.ceil(stock.length / DEAL) : 0;
-                stockPiles.innerHTML = '';
-                if (!stock.length) {
-                    stockPiles.classList.add('disabled');
-                    stockLabel.textContent = '牌堆空';
-                } else if (!canDeal()) {
-                    stockPiles.classList.remove('disabled');
-                    for (let i = 0; i < remain; i++) {
-                        const m = document.createElement('div');
-                        m.className = 'mini';
-                        stockPiles.appendChild(m);
-                    }
-                    stockLabel.textContent = '有空列';
-                    stockPiles.style.opacity = '0.6';
-                } else {
-                    stockPiles.classList.remove('disabled');
-                    stockPiles.style.opacity = '1';
-                    for (let i = 0; i < remain; i++) {
-                        const m = document.createElement('div');
-                        m.className = 'mini';
-                        stockPiles.appendChild(m);
-                    }
-                    stockLabel.textContent = '剩余' + remain + '次';
-                }
-            }
-
-            // ========== 交互处理 ==========
-            function clearSelection() {
-                selectedCol = null;
+            function clearSelection() { selectedCol = null;
                 selectedStart = null;
                 clearHint();
-                render();
-            }
+                render(); }
 
-            // 点击卡片：从该卡开始检查能否形成有效序列，如果可以则选中
             function handleCardClick(colIdx, cardIdx) {
                 if (gameOver) return;
                 const col = columns[colIdx];
                 if (!col[cardIdx].faceUp) return;
-                if (!isValidSeqFrom(colIdx, cardIdx)) {
-                    // 如果该卡不能作为起始，则取消选择
-                    clearSelection();
-                    return;
-                }
-                if (selectedCol === colIdx && selectedStart === cardIdx) {
-                    // 再次点击同一序列，取消选择
-                    clearSelection();
-                    return;
-                }
-                // 如果已有选择且目标列不同，尝试移动
+                if (!isValidSeqFrom(colIdx, cardIdx)) { clearSelection(); return; }
+                if (selectedCol === colIdx && selectedStart === cardIdx) { clearSelection(); return; }
                 if (selectedCol !== null && selectedCol !== colIdx) {
                     const moving = columns[selectedCol].slice(selectedStart);
                     if (canPlaceOn(colIdx, moving)) {
@@ -957,16 +919,15 @@
                         clearSelection();
                         checkAllComplete();
                         render();
+                        checkDeadEnd();
                         return;
                     }
                 }
-                // 否则选择新序列
                 selectedCol = colIdx;
                 selectedStart = cardIdx;
                 render();
             }
 
-            // 点击列空白处（没有牌或列本身）
             function handleColumnEmptyClick(colIdx) {
                 if (gameOver) return;
                 if (selectedCol !== null) {
@@ -977,31 +938,23 @@
                         clearSelection();
                         checkAllComplete();
                         render();
+                        checkDeadEnd();
                         return;
-                    } else {
-                        showToast('无法移动到此列');
-                    }
+                    } else showToast('无法移动到此列');
                 }
-                // 没有选中时，点击空列尝试选择最上面的有效序列（如果有）
                 const start = findTopValidStart(colIdx);
-                if (start !== null) {
-                    selectedCol = colIdx;
+                if (start !== null) { selectedCol = colIdx;
                     selectedStart = start;
-                    render();
-                } else {
-                    clearSelection();
-                }
+                    render(); } else clearSelection();
             }
 
-            // 拖拽支持
-            let dragInfo = null;
-            let dragClone = null;
-            let isDragging = false;
+            let dragInfo = null,
+                dragClone = null,
+                isDragging = false;
             const DRAG_THRESH = 8;
 
             function handleDragStart(e, colIdx, cardIdx) {
-                if (gameOver) return;
-                if (!isValidSeqFrom(colIdx, cardIdx)) return;
+                if (gameOver || !isValidSeqFrom(colIdx, cardIdx)) return;
                 dragInfo = { colIdx, cardIdx, start: cardIdx, sx: e.clientX, sy: e.clientY };
                 isDragging = false;
                 document.addEventListener('pointermove', dragMove);
@@ -1011,8 +964,8 @@
 
             function dragMove(e) {
                 if (!dragInfo) return;
-                const dx = e.clientX - dragInfo.sx;
-                const dy = e.clientY - dragInfo.sy;
+                const dx = e.clientX - dragInfo.sx,
+                    dy = e.clientY - dragInfo.sy;
                 if (!isDragging && (Math.abs(dx) > DRAG_THRESH || Math.abs(dy) > DRAG_THRESH)) {
                     isDragging = true;
                     if (selectedCol !== dragInfo.colIdx || selectedStart !== dragInfo.start) {
@@ -1032,11 +985,12 @@
                 if (dragClone) dragClone.remove();
                 const col = columns[dragInfo.colIdx];
                 const cards = col.slice(dragInfo.start);
-                const cw = getCardW();
-                const ch = getCardH();
-                const uo = getUpOffset();
+                const cw = getCardW(),
+                    ch = getCardH(),
+                    uo = getUpOffset();
                 dragClone = document.createElement('div');
-                dragClone.style.cssText = `position:fixed;z-index:2000;pointer-events:none;opacity:0.9;width:${cw}px;height:${ch+(cards.length-1)*uo}px;`;
+                dragClone.style.cssText =
+                    `position:fixed;z-index:2000;pointer-events:none;opacity:0.9;width:${cw}px;height:${ch+(cards.length-1)*uo}px;`;
                 cards.forEach((c, i) => {
                     const clone = document.createElement('div');
                     clone.style.cssText =
@@ -1073,21 +1027,119 @@
                 isDragging = false;
                 clearSelection();
                 render();
+                checkDeadEnd();
             }
 
             function findColAtPoint(cx, cy) {
                 const cols = gameArea.querySelectorAll('.column');
                 for (const col of cols) {
                     const rect = col.getBoundingClientRect();
-                    if (cx >= rect.left && cx <= rect.right && cy >= rect.top - 10 && cy <= rect.bottom + 40) {
-                        return parseInt(col.dataset.colindex);
-                    }
+                    if (cx >= rect.left && cx <= rect.right && cy >= rect.top - 5 && cy <= rect.bottom + 30) return parseInt(
+                        col.dataset.colindex);
                 }
                 return null;
             }
 
-            // ========== 初始化 ==========
-            function newGame() {
+            function getCardW() { return parseInt(getComputedStyle(document.documentElement).getPropertyValue('--card-w')) ||
+                    72; }
+
+            function getCardH() { return parseInt(getComputedStyle(document.documentElement).getPropertyValue('--card-h')) ||
+                    100; }
+
+            function getUpOffset() { return parseInt(getComputedStyle(document.documentElement).getPropertyValue('--up-os')) ||
+                    32; }
+
+            function getDownOffset() { return parseInt(getComputedStyle(document.documentElement).getPropertyValue(
+                    '--down-os')) || 20; }
+
+            function render() {
+                gameArea.innerHTML = '';
+                for (let i = 0; i < COLS; i++) {
+                    const col = columns[i];
+                    const colDiv = document.createElement('div');
+                    colDiv.className = 'column';
+                    colDiv.dataset.colindex = i;
+                    if (col.length === 0) colDiv.classList.add('empty-column');
+                    let top = 0;
+                    for (let j = 0; j < col.length; j++) {
+                        const card = col[j];
+                        const cardDiv = document.createElement('div');
+                        cardDiv.className = 'card';
+                        cardDiv.style.top = top + 'px';
+                        cardDiv.dataset.colindex = i;
+                        cardDiv.dataset.cardindex = j;
+                        if (card.faceUp) {
+                            cardDiv.classList.add('face-up', COLORS[card.suit]);
+                            cardDiv.innerHTML =
+                                `<div class="corner">${RANK_NAMES[card.rank]}<br>${card.suit}</div><div class="center">${card.suit}</div>`;
+                            if (i === selectedCol && j >= selectedStart && selectedStart !== null) cardDiv.classList.add(
+                                'selected');
+                            cardDiv.addEventListener('click', (e) => { e.stopPropagation();
+                                clearHint();
+                                handleCardClick(i, j); });
+                            cardDiv.addEventListener('pointerdown', (e) => {
+                                if (e.button !== undefined && e.button !== 0) return;
+                                e.preventDefault();
+                                handleDragStart(e, i, j);
+                            });
+                            top += getUpOffset();
+                        } else {
+                            cardDiv.classList.add('face-down');
+                            top += getDownOffset();
+                        }
+                        colDiv.appendChild(cardDiv);
+                    }
+                    colDiv.style.height = col.length === 0 ? 'calc(var(--card-h) + 20px)' : (top + 10) + 'px';
+                    colDiv.addEventListener('click', (e) => { if (e.target === colDiv) { clearHint();
+                            handleColumnEmptyClick(i); } });
+                    gameArea.appendChild(colDiv);
+                }
+                if (selectedCol !== null && selectedStart !== null) {
+                    const moving = columns[selectedCol].slice(selectedStart);
+                    document.querySelectorAll('.column.empty-column').forEach(ec => {
+                        const idx = parseInt(ec.dataset.colindex);
+                        if (canPlaceOn(idx, moving)) ec.classList.add('highlight-drop');
+                    });
+                }
+                updateCompletedArea();
+                updateStockDisplay();
+                scoreDisplay.textContent = score;
+                completeDisplay.textContent = completed;
+                checkWin();
+            }
+
+            function updateCompletedArea() {
+                completedArea.querySelectorAll('.completed-stack').forEach(el => el.remove());
+                for (let i = 0; i < completed; i++) {
+                    const s = document.createElement('div');
+                    s.className = 'completed-stack';
+                    s.textContent = 'K-A';
+                    completedArea.appendChild(s);
+                }
+            }
+
+            function updateStockDisplay() {
+                const remain = stock.length ? Math.ceil(stock.length / DEAL) : 0;
+                stockPiles.innerHTML = '';
+                if (!stock.length) { stockPiles.classList.add('disabled');
+                    stockLabel.textContent = '牌堆空'; } else if (!canDeal()) {
+                    stockPiles.classList.remove('disabled');
+                    for (let i = 0; i < remain; i++) { const m = document.createElement('div');
+                        m.className = 'mini';
+                        stockPiles.appendChild(m); }
+                    stockLabel.textContent = '有空列';
+                    stockPiles.style.opacity = '0.6';
+                } else {
+                    stockPiles.classList.remove('disabled');
+                    stockPiles.style.opacity = '1';
+                    for (let i = 0; i < remain; i++) { const m = document.createElement('div');
+                        m.className = 'mini';
+                        stockPiles.appendChild(m); }
+                    stockLabel.textContent = '剩余' + remain + '次';
+                }
+            }
+
+            function newSpiderGame() {
                 stopTimer();
                 difficulty = parseInt(diffSelect.value);
                 const deck = shuffle(createDeck(difficulty));
@@ -1099,7 +1151,6 @@
                 history = [];
                 gameOver = false;
                 hintActive = false;
-
                 let idx = 0;
                 for (let c = 0; c < COLS; c++) {
                     const num = c < FRONT_COLS ? CARDS_FRONT : CARDS_BACK;
@@ -1118,58 +1169,258 @@
                 showToast('新游戏开始');
             }
 
-            // ========== 事件绑定 ==========
-            btnNew.addEventListener('click', newGame);
-            diffSelect.addEventListener('change', newGame);
-            btnUndo.addEventListener('click', () => { if (!gameOver && undo()) render(); });
+            btnNew.addEventListener('click', newSpiderGame);
+            diffSelect.addEventListener('change', newSpiderGame);
+            btnUndo.addEventListener('click', () => { if (!gameOver && undo()) { render();
+                    checkDeadEnd(); } });
             btnHint.addEventListener('click', () => { if (!gameOver) applyHint(); });
             btnShuffle.addEventListener('click', () => {
                 if (gameOver) return;
                 saveState();
-                if (reshuffleFaceUp()) {
-                    checkAllComplete();
+                if (reshuffleFaceUp()) { checkAllComplete();
                     render();
-                    showToast('🃏 已洗牌，扣除50分');
-                }
+                    checkDeadEnd();
+                    showToast('🃏 洗牌，-50分'); }
             });
-            btnStats.addEventListener('click', showStatsDialog);
-            closeStats.addEventListener('click', () => statsOverlay.classList.remove('show'));
-            statsOverlay.addEventListener('click', (e) => { if (e.target === statsOverlay) statsOverlay.classList.remove(
-                    'show'); });
-
+            btnStatsSpider.addEventListener('click', showSpiderStats);
             stockPiles.addEventListener('click', () => {
                 if (gameOver) return;
-                if (!canDeal()) {
-                    showToast(stock.length ? '存在空列，无法发牌' : '牌堆已空');
-                    return;
-                }
+                if (!canDeal()) { showToast(stock.length ? '存在空列，无法发牌' : '牌堆已空'); return; }
                 saveState();
                 dealCards();
                 clearHint();
                 render();
+                checkDeadEnd();
             });
-
             document.addEventListener('click', (e) => {
                 if (!e.target.closest('.card') && !e.target.closest('.column') && !e.target.closest('#stockPiles') &&
-                    !e.target.closest('button') && !e.target.closest('select')) {
-                    clearSelection();
-                }
+                    !e.target.closest('button') && !e.target.closest('select')) clearSelection();
             });
-
             document.addEventListener('keydown', (e) => {
                 if (e.ctrlKey && e.key === 'z') { e.preventDefault();
                     undo();
-                    render(); }
+                    render();
+                    checkDeadEnd(); }
                 if (e.key === 'Escape') clearSelection();
             });
+            window.addEventListener('resize', () => { clearTimeout(window._resizeTimer);
+                window._resizeTimer = setTimeout(render, 250); });
+            statsOverlay.addEventListener('click', (e) => { if (e.target === statsOverlay) statsOverlay.classList.remove(
+                    'show'); });
 
-            window.addEventListener('resize', () => {
-                clearTimeout(window._resizeTimer);
-                window._resizeTimer = setTimeout(render, 250);
-            });
+            // ==================== 扫雷逻辑 ====================
+            const minesBoard = document.getElementById('minesBoard');
+            const mineDiff = document.getElementById('mineDiff');
+            const mineTimer = document.getElementById('mineTimer');
+            const mineCount = document.getElementById('mineCount');
+            const btnMineNew = document.getElementById('btnMineNew');
+            const btnToggleMode = document.getElementById('btnToggleMode');
+            const btnStatsMines = document.getElementById('btnStatsMines');
+            let mineRows, mineCols, mineTotal, mineGrid, mineRevealed, mineFlagged, mineGameOver, mineTimerSec,
+                mineInterval;
+            let mineFlagMode = false,
+                firstClickDone = false;
+            let minesGame = {
+                initialized: false,
+                init(diff) {
+                    if (diff === 'easy') { mineRows = 8;
+                        mineCols = 8;
+                        mineTotal = 10; } else if (diff === 'medium') { mineRows = 16;
+                        mineCols = 16;
+                        mineTotal = 40; } else { mineRows = 16;
+                        mineCols = 30;
+                        mineTotal = 99; }
+                    mineGrid = Array(mineRows).fill().map(() => Array(mineCols).fill(0));
+                    mineRevealed = Array(mineRows).fill().map(() => Array(mineCols).fill(false));
+                    mineFlagged = Array(mineRows).fill().map(() => Array(mineCols).fill(false));
+                    mineGameOver = false;
+                    firstClickDone = false;
+                    mineTimerSec = 0;
+                    updateMineTimer();
+                    if (mineInterval) clearInterval(mineInterval);
+                    mineInterval = setInterval(() => { if (!mineGameOver) { mineTimerSec++;
+                            updateMineTimer(); } }, 1000);
+                    this.placeMines(-1, -1);
+                    minesGame.initialized = true;
+                    renderMines();
+                },
+                placeMines(safeR, safeC) {
+                    let placed = 0;
+                    while (placed < mineTotal) {
+                        const r = Math.floor(Math.random() * mineRows),
+                            c = Math.floor(Math.random() * mineCols);
+                        if (mineGrid[r][c] === -1) continue;
+                        if (r === safeR && c === safeC) continue;
+                        mineGrid[r][c] = -1;
+                        placed++;
+                    }
+                    for (let r = 0; r < mineRows; r++)
+                        for (let c = 0; c < mineCols; c++) {
+                            if (mineGrid[r][c] === -1) continue;
+                            let cnt = 0;
+                            for (let dr = -1; dr <= 1; dr++)
+                                for (let dc = -1; dc <= 1; dc++) {
+                                    if (dr === 0 && dc === 0) continue;
+                                    const nr = r + dr,
+                                        nc = c + dc;
+                                    if (nr >= 0 && nr < mineRows && nc >= 0 && nc < mineCols && mineGrid[nr][nc] === -1)
+                                        cnt++;
+                                }
+                            mineGrid[r][c] = cnt;
+                        }
+                },
+                reset() { this.init(mineDiff.value); }
+            };
 
-            // 启动
-            newGame();
+            function updateMineTimer() { const m = Math.floor(mineTimerSec / 60),
+                    s = mineTimerSec % 60;
+                mineTimer.textContent = '⏱' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0'); }
+
+            function countFlags() { let cnt = 0; for (let r = 0; r < mineRows; r++) for (let c = 0; c < mineCols; c++) if (
+                    mineFlagged[r][c]) cnt++; return cnt; }
+
+            function renderMines() {
+                minesBoard.style.gridTemplateColumns = `repeat(${mineCols}, 1fr)`;
+                minesBoard.innerHTML = '';
+                for (let r = 0; r < mineRows; r++)
+                    for (let c = 0; c < mineCols; c++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        if (mineRevealed[r][c]) {
+                            cell.classList.add('revealed');
+                            if (mineGrid[r][c] === -1) { cell.classList.add('mine');
+                                cell.textContent = '💣'; } else if (mineGrid[r][c] > 0) { cell.textContent = mineGrid[r][
+                                    c
+                                ];
+                                cell.classList.add('num' + mineGrid[r][c]); }
+                        } else if (mineFlagged[r][c]) { cell.classList.add('flagged');
+                            cell.textContent = '🚩'; }
+                        cell.addEventListener('click', (e) => { e.preventDefault();
+                            handleMineClick(r, c); });
+                        cell.addEventListener('contextmenu', (e) => { e.preventDefault();
+                            handleMineRightClick(r, c); });
+                        minesBoard.appendChild(cell);
+                    }
+                mineCount.textContent = mineTotal - countFlags();
+            }
+
+            function handleMineClick(r, c) {
+                if (mineGameOver || mineRevealed[r][c] || mineFlagged[r][c]) return;
+                if (mineFlagMode) { handleMineRightClick(r, c); return; }
+                if (!firstClickDone) {
+                    firstClickDone = true;
+                    if (mineGrid[r][c] === -1) {
+                        // 移动地雷
+                        mineGrid[r][c] = 0;
+                        let newR, newC;
+                        do { newR = Math.floor(Math.random() * mineRows);
+                            newC = Math.floor(Math.random() * mineCols); } while (mineGrid[newR][newC] === -1 || (newR ===
+                                r && newC === c));
+                        mineGrid[newR][newC] = -1;
+                        // 重新计算数字
+                        for (let rr = 0; rr < mineRows; rr++)
+                            for (let cc = 0; cc < mineCols; cc++) {
+                                if (mineGrid[rr][cc] === -1) continue;
+                                let cnt = 0;
+                                for (let dr = -1; dr <= 1; dr++)
+                                    for (let dc = -1; dc <= 1; dc++) {
+                                        if (dr === 0 && dc === 0) continue;
+                                        const nr = rr + dr,
+                                            nc = cc + dc;
+                                        if (nr >= 0 && nr < mineRows && nc >= 0 && nc < mineCols && mineGrid[nr][nc] === -
+                                            1) cnt++;
+                                    }
+                                mineGrid[rr][cc] = cnt;
+                            }
+                    }
+                }
+                revealCell(r, c);
+                if (mineGrid[r][c] === -1) { mineGameOver = true;
+                    revealAllMines();
+                    recordMinesGame(false);
+                    showToast('💥 踩到雷了！'); }
+                checkMineWin();
+                renderMines();
+            }
+
+            function handleMineRightClick(r, c) {
+                if (mineGameOver || mineRevealed[r][c]) return;
+                mineFlagged[r][c] = !mineFlagged[r][c];
+                renderMines();
+            }
+
+            function revealCell(r, c) {
+                if (r < 0 || r >= mineRows || c < 0 || c >= mineCols || mineRevealed[r][c] || mineFlagged[r][c]) return;
+                mineRevealed[r][c] = true;
+                if (mineGrid[r][c] === 0)
+                    for (let dr = -1; dr <= 1; dr++)
+                        for (let dc = -1; dc <= 1; dc++) revealCell(r + dr, c + dc);
+            }
+
+            function revealAllMines() { for (let r = 0; r < mineRows; r++) for (let c = 0; c < mineCols; c++) if (mineGrid[r][
+                    c
+                ] === -1) mineRevealed[r][c] = true; }
+
+            function checkMineWin() {
+                let allSafeRevealed = true;
+                for (let r = 0; r < mineRows; r++)
+                    for (let c = 0; c < mineCols; c++)
+                        if (mineGrid[r][c] !== -1 && !mineRevealed[r][c]) allSafeRevealed = false;
+                if (allSafeRevealed) { mineGameOver = true;
+                    recordMinesGame(true);
+                    showToast('🎉 扫雷成功！'); }
+            }
+
+            function loadMinesStats() {
+                return {
+                    games: parseInt(localStorage.getItem('ms_games') || '0'),
+                    wins: parseInt(localStorage.getItem('ms_wins') || '0'),
+                    bestTime: parseInt(localStorage.getItem('ms_besttime') || '999999')
+                };
+            }
+
+            function saveMinesStats(s) {
+                localStorage.setItem('ms_games', s.games);
+                localStorage.setItem('ms_wins', s.wins);
+                localStorage.setItem('ms_besttime', s.bestTime);
+            }
+
+            function recordMinesGame(won) {
+                const s = loadMinesStats();
+                s.games++;
+                if (won) {
+                    s.wins++;
+                    if (mineTimerSec < s.bestTime) s.bestTime = mineTimerSec;
+                }
+                saveMinesStats(s);
+            }
+
+            function showMinesStats() {
+                const s = loadMinesStats();
+                const bestTimeStr = s.bestTime === 999999 ? '--' : Math.floor(s.bestTime / 60) + '分' + (s.bestTime % 60) +
+                    '秒';
+                statsContent.innerHTML = `
+                    <h3>💣 扫雷记录</h3>
+                    <div class="stat-row"><span>总局数</span><span>${s.games}</span></div>
+                    <div class="stat-row"><span>胜利</span><span>${s.wins}</span></div>
+                    <div class="stat-row"><span>胜率</span><span>${s.games>0?(s.wins/s.games*100).toFixed(1)+'%':'-'}</span></div>
+                    <div class="stat-row"><span>最快时间</span><span>${bestTimeStr}</span></div>
+                    <button class="close-stats" id="closeMinesStats">关闭</button>
+                `;
+                statsOverlay.classList.add('show');
+                document.getElementById('closeMinesStats').addEventListener('click', () => statsOverlay.classList.remove(
+                    'show'));
+            }
+
+            btnMineNew.addEventListener('click', () => minesGame.reset());
+            btnToggleMode.addEventListener('click', () => { mineFlagMode = !mineFlagMode;
+                btnToggleMode.textContent = mineFlagMode ? '🚩标记模式' : '🔍挖掘模式'; });
+            mineDiff.addEventListener('change', () => minesGame.reset());
+            btnStatsMines.addEventListener('click', showMinesStats);
+
+            // 初始启动
+            newSpiderGame();
+            minesGame.init('medium');
         })();
     </script>
 </body>
