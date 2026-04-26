@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>蜘蛛纸牌 - Spider Solitaire</title>
+    <style>
+        :root {
+            --bg-green: #1a6b3c;
+            --bg-dark: #0d4f2b;
+            --card-width: 75px;
+            --card-height: 105px;
+            --card-radius: 7px;
+            --down-offset: 22px;
+            --up-offset: 34px;
+            --column-gap: 8px;
+            --felt-color: #1e7e44;
+            --felt-dark: #145a30;
+            --gold: #d4a017;
+            --gold-light: #f0c75e;
+            --text-light: #e8e0d0;
+        }
+
+        @media (max-width: 900px) {
+            :root {
+                --card-width: 55px;
+                --card-height: 78px;
+                --card-radius: 5px;
+                --down-offset: 16px;
+                --up-offset: 26px;
+                --column-gap: 4px;
+            }
+        }
+        @media (max-width: 560px) {
+            :root {
+                --card-width: 40px;
+                --card-height: 58px;
+                --card-radius: 4px;
+                --down-offset: 13px;
+                --up-offset: 20px;
+                --column-gap: 2px;
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a3d1f;
+            background-image:
+                radial-gradient(ellipse at center, #1a5c30 0%, #0a3d1f 70%),
+                repeating-linear-gradient(0deg, transparent, transparent 60px, rgba(0, 0, 0, 0.03) 60px, rgba(0, 0, 0, 0.03) 62px),
+                repeating-linear-gradient(90deg, transparent, transparent 60px, rgba(0, 0, 0, 0.03) 60px, rgba(0, 0, 0, 0.03) 62px);
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 10px;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .game-wrapper {
+            width: 100%;
+            max-width: 1100px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-height: 95vh;
+        }
+
+        /* 顶部栏 */
+        .top-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            background: rgba(0, 0, 0, 0.35);
+            border-radius: 12px;
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .top-bar .title {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #f0e6c8;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+            white-space: nowrap;
+        }
+        .top-bar .title .icon {
+            display: inline-block;
+            margin-right: 4px;
+            font-size: 1.2em;
+        }
+        .top-bar select {
+            padding: 7px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            background: rgba(0, 0, 0, 0.4);
+            color: #f0e6c8;
+            font-size: 0.9em;
+            cursor: pointer;
+            font-weight: 500;
+            outline: none;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .top-bar select:hover {
+            background: rgba(0, 0, 0, 0.6);
+            border-color: var(--gold);
+        }
+        .top-bar select option {
+            background: #1a3a1a;
+            color: #f0e6c8;
+        }
+        .btn {
+            padding: 7px 16px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            background: rgba(0, 0, 0, 0.4);
+            color: #f0e6c8;
+            font-size: 0.9em;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            white-space: nowrap;
+            font-family: inherit;
+            letter-spacing: 0.5px;
+        }
+        .btn:hover {
+            background: rgba(0, 0, 0, 0.6);
+            border-color: var(--gold);
+            color: #fff;
+            box-shadow: 0 0 12px rgba(212, 160, 23, 0.25);
+        }
+        .btn:active {
+            transform: scale(0.96);
+            transition: transform 0.08s;
+        }
+        .btn.accent {
+            background: var(--gold);
+            color: #1a1a1a;
+            border-color: var(--gold);
+            font-weight: 700;
+        }
+        .btn.accent:hover {
+            background: #e5b830;
+            box-shadow: 0 0 18px rgba(212, 160, 23, 0.4);
+        }
+        .score-display {
+            color: #f0e6c8;
+            font-weight: 600;
+            font-size: 1em;
+            white-space: nowrap;
+            padding: 6px 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            letter-spacing: 0.5px;
+        }
+        .score-display span {
+            color: var(--gold-light);
+            font-weight: 700;
+            font-size: 1.1em;
+        }
+        .complete-display {
+            color: #f0e6c8;
+            font-weight: 600;
+            font-size: 1em;
+            white-space: nowrap;
+            padding: 6px 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            letter-spacing: 0.5px;
+        }
+        .complete-display .filled {
+            color: var(--gold-light);
+            font-weight: 700;
+        }
+        .spacer {
+            flex: 1;
+            min-width: 10px;
+        }
+
+        /* 完成区 */
+        .completed-area {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            padding: 6px 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            min-height: 40px;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed rgba(255, 255, 255, 0.1);
+        }
+        .completed-area .label {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.8em;
+            letter-spacing: 1px;
+            margin-right: 4px;
+        }
+        .completed-stack {
+            width: 30px;
+            height: 40px;
+            background: linear-gradient(145deg, #f5f0e0, #d5cfb8);
+            border-radius: 3px;
+            border: 2px solid #b8a878;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.55em;
+            font-weight: 700;
+            color: #333;
+            letter-spacing: -0.5px;
+        }
+        @media (max-width: 560px) {
+            .completed-stack {
+                width: 22px;
+                height: 30px;
+                font-size: 0.4em;
+            }
+        }
+
+        /* 游戏区域 */
+        .game-area {
+            display: flex;
+            gap: var(--column-gap);
+            justify-content: center;
+            flex: 1;
+            padding: 8px 4px 20px 4px;
+            overflow-x: auto;
+            overflow-y: visible;
+            min-height: 400px;
+            align-items: flex-start;
+            scroll-behavior: smooth;
+        }
+        .game-area::-webkit-scrollbar {
+            height: 5px;
+        }
+        .game-area::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+        .game-area::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+
+        .column {
+            position: relative;
+            width: var(--card-width);
+            flex-shrink: 0;
+            min-height: 180px;
+            cursor: pointer;
+            border-radius: var(--card-radius);
+            transition: box-shadow 0.2s;
+            padding-bottom: 20px;
+        }
+        .column.empty-column {
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.15);
+            min-height: calc(var(--card-height) + 30px);
+            border-radius: var(--card-radius);
+            transition: all 0.25s;
+        }
+        .column.empty-column:hover {
+            border-color: rgba(255, 255, 255, 0.45);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.08);
+        }
+        .column.empty-column.highlight-drop {
+            border-color: var(--gold-light) !important;
+            background: rgba(212, 160, 23, 0.15) !important;
+            box-shadow: 0 0 24px rgba(212, 160, 23, 0.3) !important;
+            animation: pulse-border 0.8s ease-in-out infinite;
+        }
+        @keyframes pulse-border {
+            0%,
+            100% {
+                box-shadow: 0 0 18px rgba(212, 160, 23, 0.25);
+            }
+            50% {
+                box-shadow: 0 0 32px rgba(212, 160, 23, 0.5);
+            }
+        }
+
+        .card {
+            position: absolute;
+            width: var(--card-width);
+            height: var(--card-height);
+            border-radius: var(--card-radius);
+            left: 0;
+            transition: box-shadow 0.2s, filter 0.2s;
+            pointer-events: auto;
+            cursor: pointer;
+        }
+        .card.face-down {
+            background: linear-gradient(145deg, #2c5f8a, #1a3f5c);
+            border: 2px solid #3a7db5;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+            cursor: default;
+            pointer-events: none;
+            background-image:
+                repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(255, 255, 255, 0.03) 8px, rgba(255, 255, 255, 0.03) 9px),
+                repeating-linear-gradient(-45deg, transparent, transparent 8px, rgba(255, 255, 255, 0.03) 8px, rgba(255, 255, 255, 0.03) 9px),
+                linear-gradient(145deg, #2c5f8a, #1a3f5c);
+            background-image:
+                repeating-linear-gradient(45deg, transparent, transparent 7px, rgba(255, 255, 255, 0.04) 7px, rgba(255, 255, 255, 0.04) 8px),
+                repeating-linear-gradient(-45deg, transparent, transparent 7px, rgba(255, 255, 255, 0.04) 7px, rgba(255, 255, 255, 0.04) 8px),
+                linear-gradient(160deg, #2e6495 0%, #1b4260 50%, #153349 100%);
+            border: 2px solid #4a90c2;
+            box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.06), 0 3px 8px rgba(0, 0, 0, 0.5);
+        }
+        .card.face-up {
+            background: linear-gradient(160deg, #fefefe 0%, #f0ece0 30%, #e8e3d4 100%);
+            border: 2px solid #c8c0a8;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            padding: 6px 8px;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .card.face-up:hover {
+            box-shadow: 0 5px 18px rgba(0, 0, 0, 0.45);
+            filter: brightness(1.04);
+            z-index: 100 !important;
+        }
+        .card.face-up .card-corner {
+            font-size: 0.75em;
+            letter-spacing: -1px;
+            line-height: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .card.face-up .card-center {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8em;
+            opacity: 0.85;
+        }
+        @media (max-width: 560px) {
+            .card.face-up {
+                padding: 3px 4px;
+            }
+            .card.face-up .card-corner {
+                font-size: 0.55em;
+            }
+            .card.face-up .card-center {
+                font-size: 1.2em;
+            }
+        }
+        .card.red {
+            color: #c0392b;
+        }
+        .card.black {
+            color: #1a1a1a;
+        }
+        .card.selected {
+            box-shadow: 0 0 0 4px rgba(255, 200, 40, 0.85), 0 6px 20px rgba(255, 180, 30, 0.5) !important;
+            filter: brightness(1.08) !important;
+            z-index: 90 !important;
+            border-color: #f0c040 !important;
+            animation: selected-glow 1s ease-in-out infinite;
+        }
+        @keyframes selected-glow {
+            0%,
+            100% {
+                box-shadow: 0 0 0 4px rgba(255, 200, 40, 0.85), 0 6px 20px rgba(255, 180, 30, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 0 6px rgba(255, 200, 40, 0.95), 0 8px 28px rgba(255, 180, 30, 0.7);
+            }
+        }
+
+        /* 底部发牌区 */
+        .stock-area {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            padding: 10px;
+            flex-wrap: wrap;
+        }
+        .stock-piles {
+            display: flex;
+            gap: 2px;
+            cursor: pointer;
+            position: relative;
+            padding: 8px 14px;
+            border-radius: 12px;
+            transition: all 0.25s;
+            border: 2px solid transparent;
+            background: rgba(0, 0, 0, 0.2);
+        }
+        .stock-piles:hover {
+            border-color: rgba(255, 255, 255, 0.4);
+            background: rgba(0, 0, 0, 0.4);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+        .stock-piles.disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        .stock-piles .mini-stack {
+            width: 28px;
+            height: 36px;
+            background: linear-gradient(145deg, #2c5f8a, #1a3f5c);
+            border: 1.5px solid #3a7db5;
+            border-radius: 3px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        @media (max-width: 560px) {
+            .stock-piles .mini-stack {
+                width: 20px;
+                height: 27px;
+            }
+        }
+        .stock-label {
+            color: #ccc;
+            font-size: 0.85em;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.85);
+            color: #f0e6c8;
+            padding: 10px 22px;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 0.95em;
+            z-index: 999;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.35s;
+            letter-spacing: 0.5px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .toast.show {
+            opacity: 1;
+        }
+
+        /* 胜利弹窗 */
+        .win-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s;
+        }
+        .win-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .win-dialog {
+            background: linear-gradient(160deg, #2a4a2a, #1a3a1a);
+            border: 3px solid var(--gold);
+            border-radius: 20px;
+            padding: 30px 40px;
+            text-align: center;
+            color: #f0e6c8;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            max-width: 90vw;
+        }
+        .win-dialog h2 {
+            font-size: 2em;
+            margin-bottom: 8px;
+            color: var(--gold-light);
+        }
+        .win-dialog .trophy {
+            font-size: 4em;
+            display: block;
+            margin-bottom: 10px;
+        }
+        .win-dialog .score-final {
+            font-size: 1.3em;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-wrapper" id="gameWrapper">
+        <!-- 顶部栏 -->
+        <div class="top-bar">
+            <span class="title"><span class="icon">🕷️</span>蜘蛛纸牌</span>
+            <select id="difficultySelect" title="选择难度">
+                <option value="1">🟢 简单 · 1种花色</option>
+                <option value="2" selected>🟡 中等 · 2种花色</option>
+                <option value="4">🔴 困难 · 4种花色</option>
+            </select>
+            <button class="btn accent" id="btnNewGame" title="开始新游戏">🔄 新游戏</button>
+            <button class="btn" id="btnUndo" title="撤销 (Ctrl+Z)">↩ 撤销</button>
+            <span class="spacer"></span>
+            <span class="score-display">⭐ 得分：<span id="scoreDisplay">500</span></span>
+            <span class="complete-display">🏆 完成：<span id="completeDisplay">0</span>/<span id="completeTotal">8</span></span>
+        </div>
+
+        <!-- 完成区 -->
+        <div class="completed-area" id="completedArea">
+            <span class="label">已完成序列</span>
+        </div>
+
+        <!-- 游戏区域 -->
+        <div class="game-area" id="gameArea">
+            <!-- 10列动态生成 -->
+        </div>
+
+        <!-- 发牌区 -->
+        <div class="stock-area">
+            <div class="stock-piles" id="stockPiles" title="点击发牌（所有列非空时才可发牌）">
+                <!-- 动态生成迷你牌堆 -->
+            </div>
+            <span class="stock-label" id="stockLabel">剩余发牌：5次</span>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <!-- 胜利弹窗 -->
+    <div class="win-overlay" id="winOverlay">
+        <div class="win-dialog">
+            <span class="trophy">🏆</span>
+            <h2>恭喜胜利！</h2>
+            <p>你成功完成了所有序列！</p>
+            <p class="score-final">最终得分：<strong id="winScore">500</strong></p>
+            <button class="btn accent" id="btnWinNewGame" style="margin-top:14px;font-size:1.1em;">🔄 再来一局</button>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ==================== 常量 ====================
+            const SUITS = ['♠', '♥', '♦', '♣'];
+            const SUIT_COLORS = { '♠': 'black', '♥': 'red', '♦': 'red', '♣': 'black' };
+            const RANK_NAMES = { 1: 'A', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9: '9', 10: '10',
+                11: 'J', 12: 'Q', 13: 'K' };
+            const TOTAL_COLUMNS = 10;
+            const INITIAL_FRONT_COLS = 4; // 前4列多一张牌
+            const CARDS_FRONT_COL = 6;
+            const CARDS_BACK_COL = 5;
+            const TOTAL_COMPLETE_NEEDED = 8; // 完成8组K-A序列
+            const DEAL_SIZE = 10;
+
+            // ==================== DOM引用 ====================
+            const gameArea = document.getElementById('gameArea');
+            const stockPiles = document.getElementById('stockPiles');
+            const stockLabel = document.getElementById('stockLabel');
+            const scoreDisplay = document.getElementById('scoreDisplay');
+            const completeDisplay = document.getElementById('completeDisplay');
+            const completeTotal = document.getElementById('completeTotal');
+            const completedArea = document.getElementById('completedArea');
+            const difficultySelect = document.getElementById('difficultySelect');
+            const btnNewGame = document.getElementById('btnNewGame');
+            const btnUndo = document.getElementById('btnUndo');
+            const toast = document.getElementById('toast');
+            const winOverlay = document.getElementById('winOverlay');
+            const winScore = document.getElementById('winScore');
+            const btnWinNewGame = document.getElementById('btnWinNewGame');
+            const stockPilesContainer = document.getElementById('stockPiles');
+
+            completeTotal.textContent = TOTAL_COMPLETE_NEEDED;
+
+            // ==================== 游戏状态 ====================
+            let columns = []; // 10个数组，每个元素 {suit, rank, faceUp}
+            let stock = []; // 剩余牌堆
+            let completed = 0; // 已完成序列数
+            let score = 500;
+            let selectedColIndex = null; // 当前选中列的索引（null表示无选中）
+            let selectedCardStartIndex = null; // 选中序列在列中的起始索引
+            let history = []; // 撤销历史 [{columns, stock, completed, score}]
+            let difficulty = 2; // 默认中等难度
+            let gameOver = false;
+
+            // ==================== 工具函数 ====================
+            function createDeck(numSuits) {
+                // 使用2副牌（104张），根据难度分配花色
+                const deck = [];
+                const suitsToUse = SUITS.slice(0, numSuits);
+                // 每种花色在2副牌中出现的总次数 = 104 / numSuits = 每个花色 104/numSuits 张
+                // 即每种花色有 (104/numSuits)/13 = 8/numSuits 组完整序列
+                const groupsPerSuit = TOTAL_COMPLETE_NEEDED / numSuits; // 每种花色的K-A组数
+                for (const suit of suitsToUse) {
+                    for (let g = 0; g < groupsPerSuit; g++) {
+                        for (let rank = 1; rank <= 13; rank++) {
+                            deck.push({ suit, rank, faceUp: false });
+                        }
+                    }
+                }
+                return deck;
+            }
+
+            function shuffle(arr) {
+                const a = [...arr];
+                for (let i = a.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [a[i], a[j]] = [a[j], a[i]];
+                }
+                return a;
+            }
+
+            function saveState() {
+                history.push({
+                    columns: columns.map(col => col.map(c => ({ ...c }))),
+                    stock: [...stock],
+                    completed: completed,
+                    score: score,
+                    selectedColIndex: selectedColIndex,
+                    selectedCardStartIndex: selectedCardStartIndex,
+                });
+                // 限制历史记录数量
+                if (history.length > 200) history.shift();
+            }
+
+            function showToast(msg, duration = 1800) {
+                toast.textContent = msg;
+                toast.classList.add('show');
+                clearTimeout(toast._timeout);
+                toast._timeout = setTimeout(() => {
+                    toast.classList.remove('show');
+                }, duration);
+            }
+
+            // ==================== 游戏逻辑 ====================
+            function getValidMoveSequence(colIndex) {
+                // 返回该列中可移动序列的起始索引（从该索引到末尾是同花色连续递减且全部faceUp）
+                const col = columns[colIndex];
+                if (!col || col.length === 0) return null;
+                // 找到第一张faceUp的牌
+                let firstUp = -1;
+                for (let i = col.length - 1; i >= 0; i--) {
+                    if (col[i].faceUp) firstUp = i;
+                    else break;
+                }
+                if (firstUp === -1) return null;
+                // 从firstUp开始向后检查是否同花色连续递减
+                // 实际上需要找到从某张faceUp牌开始到末尾的最长有效序列
+                // 从末尾向前找：序列中所有牌faceUp、同花色、连续递减
+                let seqStart = col.length - 1;
+                for (let i = col.length - 2; i >= firstUp; i--) {
+                    if (col[i].faceUp &&
+                        col[i].suit === col[i + 1].suit &&
+                        col[i].rank === col[i + 1].rank + 1) {
+                        seqStart = i;
+                    } else {
+                        break;
+                    }
+                }
+                return seqStart;
+            }
+
+            function canPlaceOn(targetColIndex, movingSequence) {
+                if (movingSequence.length === 0) return false;
+                const targetCol = columns[targetColIndex];
+                if (targetCol.length === 0) return true; // 空列可以放任何序列
+                const topCard = targetCol[targetCol.length - 1];
+                const bottomMovingCard = movingSequence[0]; // 序列中最小的牌（在列中最底部）
+                // 目标顶部牌必须比移动序列底部牌大1
+                return topCard.rank === bottomMovingCard.rank + 1;
+            }
+
+            function moveCards(fromColIndex, toColIndex, startIndex) {
+                if (fromColIndex === toColIndex) return false;
+                const fromCol = columns[fromColIndex];
+                if (startIndex >= fromCol.length) return false;
+                const movingCards = fromCol.splice(startIndex);
+                if (!canPlaceOn(toColIndex, movingCards)) {
+                    // 放回去
+                    fromCol.push(...movingCards);
+                    return false;
+                }
+                columns[toColIndex].push(...movingCards);
+                // 检查源列是否需要翻牌
+                if (fromCol.length > 0 && !fromCol[fromCol.length - 1].faceUp) {
+                    fromCol[fromCol.length - 1].faceUp = true;
+                }
+                score = Math.max(0, score - 1);
+                return true;
+            }
+
+            function checkAndComplete(colIndex) {
+                const col = columns[colIndex];
+                if (col.length < 13) return false;
+                // 检查最后13张是否形成K到A的同花色序列
+                const last13 = col.slice(-13);
+                if (last13[0].rank !== 13) return false; // 最底部必须是K
+                for (let i = 0; i < 13; i++) {
+                    if (last13[i].rank !== 13 - i) return false;
+                    if (last13[i].suit !== last13[0].suit) return false;
+                    if (!last13[i].faceUp) return false;
+                }
+                // 完成！移除这13张牌
+                columns[colIndex] = col.slice(0, -13);
+                completed++;
+                score += 100;
+                // 检查移除后是否需要翻牌
+                if (columns[colIndex].length > 0 && !columns[colIndex][columns[colIndex].length - 1].faceUp) {
+                    columns[colIndex][columns[colIndex].length - 1].faceUp = true;
+                }
+                return true;
+            }
+
+            function checkAllColumnsForComplete() {
+                let anyCompleted = false;
+                for (let i = 0; i < TOTAL_COLUMNS; i++) {
+                    while (checkAndComplete(i)) {
+                        anyCompleted = true;
+                    }
+                }
+                return anyCompleted;
+            }
+
+            function canDeal() {
+                if (stock.length === 0) return false;
+                // 所有列必须非空
+                for (let i = 0; i < TOTAL_COLUMNS; i++) {
+                    if (columns[i].length === 0) return false;
+                }
+                return true;
+            }
+
+            function dealCards() {
+                if (!canDeal()) return false;
+                saveState();
+                const dealCount = Math.min(DEAL_SIZE, stock.length);
+                for (let i = 0; i < dealCount; i++) {
+                    const card = stock.pop();
+                    card.faceUp = true;
+                    columns[i].push(card);
+                }
+                score = Math.max(0, score - 1);
+                // 发牌后检查完成
+                checkAllColumnsForComplete();
+                // 清除选择
+                selectedColIndex = null;
+                selectedCardStartIndex = null;
+                return true;
+            }
+
+            function undo() {
+                if (history.length === 0) {
+                    showToast('没有可撤销的操作');
+                    return false;
+                }
+                const prev = history.pop();
+                columns = prev.columns;
+                stock = prev.stock;
+                completed = prev.completed;
+                score = prev.score;
+                selectedColIndex = prev.selectedColIndex;
+                selectedCardStartIndex = prev.selectedCardStartIndex;
+                gameOver = false;
+                winOverlay.classList.remove('show');
+                return true;
+            }
+
+            function checkWin() {
+                if (completed >= TOTAL_COMPLETE_NEEDED && !gameOver) {
+                    gameOver = true;
+                    winScore.textContent = score;
+                    setTimeout(() => {
+                        winOverlay.classList.add('show');
+                    }, 400);
+                }
+            }
+
+            // ==================== 渲染 ====================
+            function render() {
+                // 渲染列
+                gameArea.innerHTML = '';
+                for (let colIdx = 0; colIdx < TOTAL_COLUMNS; colIdx++) {
+                    const col = columns[colIdx];
+                    const colDiv = document.createElement('div');
+                    colDiv.className = 'column';
+                    colDiv.dataset.colIndex = colIdx;
+                    if (col.length === 0) {
+                        colDiv.classList.add('empty-column');
+                        // 空列点击处理
+                        colDiv.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            handleColumnClick(colIdx);
+                        });
+                    }
+
+                    // 计算牌的位置
+                    let topOffset = 0;
+                    for (let cardIdx = 0; cardIdx < col.length; cardIdx++) {
+                        const card = col[cardIdx];
+                        const cardDiv = document.createElement('div');
+                        cardDiv.className = 'card';
+                        cardDiv.style.top = topOffset + 'px';
+                        cardDiv.dataset.colIndex = colIdx;
+                        cardDiv.dataset.cardIndex = cardIdx;
+
+                        if (card.faceUp) {
+                            cardDiv.classList.add('face-up');
+                            cardDiv.classList.add(SUIT_COLORS[card.suit]);
+                            cardDiv.innerHTML = `
+                                <div class="card-corner">${RANK_NAMES[card.rank]}<br>${card.suit}</div>
+                                <div class="card-center">${card.suit}</div>
+                            `;
+                            // 检查是否选中
+                            if (colIdx === selectedColIndex &&
+                                cardIdx >= selectedCardStartIndex &&
+                                selectedCardStartIndex !== null) {
+                                cardDiv.classList.add('selected');
+                            }
+                            // 点击事件
+                            cardDiv.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                handleColumnClick(colIdx);
+                            });
+                            // 拖拽事件
+                            cardDiv.addEventListener('mousedown', (e) => {
+                                if (e.button === 0) handleDragStart(e, colIdx, cardIdx);
+                            });
+                            cardDiv.addEventListener('touchstart', (e) => {
+                                handleDragStart(e, colIdx, cardIdx);
+                            }, { passive: false });
+                            topOffset += getUpOffset();
+                        } else {
+                            cardDiv.classList.add('face-down');
+                            topOffset += getDownOffset();
+                        }
+                        colDiv.appendChild(cardDiv);
+                    }
+
+                    // 如果列为空，设置最小高度
+                    if (col.length === 0) {
+                        const placeholder = document.createElement('div');
+                        placeholder.style.height = 'var(--card-height)';
+                        placeholder.style.width = '100%';
+                        colDiv.appendChild(placeholder);
+                    }
+
+                    gameArea.appendChild(colDiv);
+                }
+
+                // 高亮空列（当有选中序列时可放入）
+                if (selectedColIndex !== null && selectedCardStartIndex !== null) {
+                    const movingSeq = columns[selectedColIndex].slice(selectedCardStartIndex);
+                    document.querySelectorAll('.column.empty-column').forEach(emptyCol => {
+                        if (canPlaceOn(parseInt(emptyCol.dataset.colIndex), movingSeq)) {
+                            emptyCol.classList.add('highlight-drop');
+                        }
+                    });
+                }
+
+                // 渲染完成区
+                updateCompletedArea();
+
+                // 渲染发牌堆
+                updateStockDisplay();
+
+                // 更新分数
+                scoreDisplay.textContent = score;
+                completeDisplay.textContent = completed;
+
+                // 检查胜利
+                checkWin();
+            }
+
+            function getDownOffset() {
+                const style = getComputedStyle(document.documentElement);
+                return parseInt(style.getPropertyValue('--down-offset').trim()) || 22;
+            }
+
+            function getUpOffset() {
+                const style = getComputedStyle(document.documentElement);
+                return parseInt(style.getPropertyValue('--up-offset').trim()) || 34;
+            }
+
+            function updateCompletedArea() {
+                // 保留label
+                const existingStacks = completedArea.querySelectorAll('.completed-stack');
+                const currentCount = existingStacks.length;
+                if (completed === currentCount) return;
+                // 重建
+                completedArea.querySelectorAll('.completed-stack').forEach(el => el.remove());
+                for (let i = 0; i < completed; i++) {
+                    const stack = document.createElement('div');
+                    stack.className = 'completed-stack';
+                    stack.textContent = 'K-A';
+                    stack.title = '已完成序列 #' + (i + 1);
+                    completedArea.appendChild(stack);
+                }
+                // 确保label存在
+                if (!completedArea.querySelector('.label')) {
+                    const label = document.createElement('span');
+                    label.className = 'label';
+                    label.textContent = '已完成序列';
+                    completedArea.prepend(label);
+                }
+            }
+
+            function updateStockDisplay() {
+                const remainingDeals = stock.length > 0 ? Math.ceil(stock.length / DEAL_SIZE) : 0;
+                stockPilesContainer.innerHTML = '';
+                if (stock.length === 0) {
+                    stockPilesContainer.classList.add('disabled');
+                    stockLabel.textContent = '牌堆已空';
+                } else if (!canDeal() && stock.length > 0) {
+                    // 有牌但不能发（有空列）
+                    stockPilesContainer.classList.remove('disabled');
+                    for (let i = 0; i < remainingDeals; i++) {
+                        const mini = document.createElement('div');
+                        mini.className = 'mini-stack';
+                        stockPilesContainer.appendChild(mini);
+                    }
+                    stockLabel.textContent = '有空列，无法发牌';
+                    stockPilesContainer.style.opacity = '0.55';
+                } else {
+                    stockPilesContainer.classList.remove('disabled');
+                    stockPilesContainer.style.opacity = '1';
+                    for (let i = 0; i < remainingDeals; i++) {
+                        const mini = document.createElement('div');
+                        mini.className = 'mini-stack';
+                        stockPilesContainer.appendChild(mini);
+                    }
+                    stockLabel.textContent = '剩余发牌：' + remainingDeals + '次';
+                }
+            }
+
+            // ==================== 交互处理 ====================
+            function handleColumnClick(colIdx) {
+                if (gameOver) return;
+                const col = columns[colIdx];
+
+                if (selectedColIndex === null) {
+                    // 没有选中的列，尝试选中
+                    if (col.length === 0) return; // 空列无法选中
+                    const seqStart = getValidMoveSequence(colIdx);
+                    if (seqStart === null) return; // 没有可移动序列
+                    selectedColIndex = colIdx;
+                    selectedCardStartIndex = seqStart;
+                    render();
+                } else if (selectedColIndex === colIdx) {
+                    // 点击同一列，取消选择
+                    selectedColIndex = null;
+                    selectedCardStartIndex = null;
+                    render();
+                } else {
+                    // 尝试移动
+                    const movingSeq = columns[selectedColIndex].slice(selectedCardStartIndex);
+                    if (canPlaceOn(colIdx, movingSeq)) {
+                        saveState();
+                        const success = moveCards(selectedColIndex, colIdx, selectedCardStartIndex);
+                        selectedColIndex = null;
+                        selectedCardStartIndex = null;
+                        if (success) {
+                            checkAllColumnsForComplete();
+                        }
+                        render();
+                    } else {
+                        // 不能移动，切换选择到目标列（如果目标列有可移动序列）
+                        if (col.length > 0) {
+                            const seqStart = getValidMoveSequence(colIdx);
+                            if (seqStart !== null) {
+                                selectedColIndex = colIdx;
+                                selectedCardStartIndex = seqStart;
+                            } else {
+                                selectedColIndex = null;
+                                selectedCardStartIndex = null;
+                            }
+                        } else {
+                            // 目标为空列但不能放置，保持原选择
+                            showToast('无法移动到此列');
+                        }
+                        render();
+                    }
+                }
+            }
+
+            // 拖拽支持
+            let dragInfo = null;
+            let dragClone = null;
+            let dragStartX, dragStartY;
+            let isDragging = false;
+            const DRAG_THRESHOLD = 6;
+
+            function handleDragStart(e, colIdx, cardIdx) {
+                if (gameOver) return;
+                const col = columns[colIdx];
+                const seqStart = getValidMoveSequence(colIdx);
+                if (seqStart === null || cardIdx < seqStart) return; // 点击的牌不在可移动序列中
+
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                dragInfo = {
+                    colIdx,
+                    cardIdx,
+                    seqStart,
+                    startX: clientX,
+                    startY: clientY,
+                };
+                dragStartX = clientX;
+                dragStartY = clientY;
+                isDragging = false;
+
+                // 绑定全局事件
+                document.addEventListener('mousemove', handleDragMove);
+                document.addEventListener('mouseup', handleDragEnd);
+                document.addEventListener('touchmove', handleDragMove, { passive: false });
+                document.addEventListener('touchend', handleDragEnd);
+            }
+
+            function handleDragMove(e) {
+                if (!dragInfo) return;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                const dx = clientX - dragStartX;
+                const dy = clientY - dragStartY;
+
+                if (!isDragging && (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD)) {
+                    isDragging = true;
+                    // 自动选中
+                    if (selectedColIndex !== dragInfo.colIdx || selectedCardStartIndex !== dragInfo.seqStart) {
+                        selectedColIndex = dragInfo.colIdx;
+                        selectedCardStartIndex = dragInfo.seqStart;
+                        render();
+                    }
+                    // 创建拖拽克隆
+                    createDragClone(clientX, clientY);
+                }
+
+                if (isDragging && dragClone) {
+                    dragClone.style.left = (clientX - dragClone._offsetX) + 'px';
+                    dragClone.style.top = (clientY - dragClone._offsetY) + 'px';
+                }
+
+                if (e.cancelable) e.preventDefault();
+            }
+
+            function createDragClone(clientX, clientY) {
+                if (!dragInfo) return;
+                const col = columns[dragInfo.colIdx];
+                const movingCards = col.slice(dragInfo.seqStart);
+                if (movingCards.length === 0) return;
+
+                // 移除旧克隆
+                if (dragClone) dragClone.remove();
+
+                dragClone = document.createElement('div');
+                dragClone.style.position = 'fixed';
+                dragClone.style.zIndex = '2000';
+                dragClone.style.pointerEvents = 'none';
+                dragClone.style.opacity = '0.9';
+                dragClone.style.filter = 'drop-shadow(0 8px 20px rgba(0,0,0,0.5))';
+
+                const cardW = getCardWidth();
+                const cardH = getCardHeight();
+                const upOff = getUpOffset();
+
+                dragClone.style.width = cardW + 'px';
+                dragClone.style.height = (cardH + (movingCards.length - 1) * upOff) + 'px';
+
+                // 创建每张牌的克隆
+                movingCards.forEach((card, i) => {
+                    const cloneCard = document.createElement('div');
+                    cloneCard.style.position = 'absolute';
+                    cloneCard.style.top = (i * upOff) + 'px';
+                    cloneCard.style.left = '0';
+                    cloneCard.style.width = cardW + 'px';
+                    cloneCard.style.height = cardH + 'px';
+                    cloneCard.style.borderRadius = 'var(--card-radius)';
+                    cloneCard.style.background = 'linear-gradient(160deg, #fefefe 0%, #f0ece0 30%, #e8e3d4 100%)';
+                    cloneCard.style.border = '2px solid #c8c0a8';
+                    cloneCard.style.boxShadow = '0 3px 10px rgba(0,0,0,0.35)';
+                    cloneCard.style.display = 'flex';
+                    cloneCard.style.flexDirection = 'column';
+                    cloneCard.style.padding = '4px 6px';
+                    cloneCard.style.fontWeight = '700';
+                    cloneCard.style.lineHeight = '1';
+                    cloneCard.style.color = SUIT_COLORS[card.suit] === 'red' ? '#c0392b' : '#1a1a1a';
+                    cloneCard.style.fontSize = (cardW < 50 ? '0.55em' : '0.75em');
+                    cloneCard.innerHTML = `
+                        <div style="display:flex;flex-direction:column;align-items:flex-start;font-size:${cardW < 50 ? '0.7em' : '0.75em'};letter-spacing:-1px;">
+                            ${RANK_NAMES[card.rank]}<br>${card.suit}
+                        </div>
+                        <div style="flex:1;display:flex;align-items:center;justify-content:center;font-size:${cardW < 50 ? '1em' : '1.6em'};opacity:0.85;">
+                            ${card.suit}
+                        </div>
+                    `;
+                    dragClone.appendChild(cloneCard);
+                });
+
+                dragClone._offsetX = cardW / 2;
+                dragClone._offsetY = upOff;
+                dragClone.style.left = (clientX - dragClone._offsetX) + 'px';
+                dragClone.style.top = (clientY - dragClone._offsetY) + 'px';
+
+                document.body.appendChild(dragClone);
+            }
+
+            function getCardWidth() {
+                const style = getComputedStyle(document.documentElement);
+                return parseInt(style.getPropertyValue('--card-width').trim()) || 75;
+            }
+
+            function getCardHeight() {
+                const style = getComputedStyle(document.documentElement);
+                return parseInt(style.getPropertyValue('--card-height').trim()) || 105;
+            }
+
+            function handleDragEnd(e) {
+                document.removeEventListener('mousemove', handleDragMove);
+                document.removeEventListener('mouseup', handleDragEnd);
+                document.removeEventListener('touchmove', handleDragMove);
+                document.removeEventListener('touchend', handleDragEnd);
+
+                if (isDragging && dragInfo) {
+                    const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+                    const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+                    // 找到目标列
+                    const targetCol = findColumnAtPoint(clientX, clientY);
+                    if (targetCol !== null && targetCol !== dragInfo.colIdx) {
+                        const movingSeq = columns[dragInfo.colIdx].slice(dragInfo.seqStart);
+                        if (canPlaceOn(targetCol, movingSeq)) {
+                            saveState();
+                            moveCards(dragInfo.colIdx, targetCol, dragInfo.seqStart);
+                            checkAllColumnsForComplete();
+                        }
+                    }
+                    selectedColIndex = null;
+                    selectedCardStartIndex = null;
+                }
+
+                // 清理
+                if (dragClone) {
+                    dragClone.remove();
+                    dragClone = null;
+                }
+                dragInfo = null;
+                isDragging = false;
+                render();
+            }
+
+            function findColumnAtPoint(clientX, clientY) {
+                const columnsEls = gameArea.querySelectorAll('.column');
+                for (const colEl of columnsEls) {
+                    const rect = colEl.getBoundingClientRect();
+                    if (clientX >= rect.left && clientX <= rect.right &&
+                        clientY >= rect.top && clientY <= rect.bottom + 60) {
+                        return parseInt(colEl.dataset.colIndex);
+                    }
+                }
+                return null;
+            }
+
+            // ==================== 游戏初始化 ====================
+            function initGame() {
+                difficulty = parseInt(difficultySelect.value);
+                const deck = shuffle(createDeck(difficulty));
+                columns = Array.from({ length: TOTAL_COLUMNS }, () => []);
+                completed = 0;
+                score = 500;
+                selectedColIndex = null;
+                selectedCardStartIndex = null;
+                history = [];
+                gameOver = false;
+                winOverlay.classList.remove('show');
+
+                // 分配牌到列
+                let cardIndex = 0;
+                for (let col = 0; col < TOTAL_COLUMNS; col++) {
+                    const numCards = col < INITIAL_FRONT_COLS ? CARDS_FRONT_COL : CARDS_BACK_COL;
+                    for (let c = 0; c < numCards; c++) {
+                        const card = deck[cardIndex];
+                        card.faceUp = (c === numCards - 1); // 最后一张面朝上
+                        columns[col].push(card);
+                        cardIndex++;
+                    }
+                }
+                // 剩余牌放入stock
+                stock = deck.slice(cardIndex);
+                // 确保stock中的牌都面朝下
+                stock.forEach(c => c.faceUp = false);
+
+                // 初始检查完成（不太可能有，但以防万一）
+                checkAllColumnsForComplete();
+
+                render();
+                updateStockDisplay();
+                scoreDisplay.textContent = score;
+                completeDisplay.textContent = completed;
+                completedArea.querySelectorAll('.completed-stack').forEach(el => el.remove());
+                showToast('新游戏开始！难度：' + (difficulty === 1 ? '简单' : difficulty === 2 ? '中等' : '困难'));
+            }
+
+            // ==================== 事件绑定 ====================
+            btnNewGame.addEventListener('click', initGame);
+            btnWinNewGame.addEventListener('click', initGame);
+            difficultySelect.addEventListener('change', initGame);
+
+            btnUndo.addEventListener('click', () => {
+                if (gameOver) return;
+                if (undo()) {
+                    render();
+                    updateStockDisplay();
+                    scoreDisplay.textContent = score;
+                    completeDisplay.textContent = completed;
+                    showToast('已撤销');
+                }
+            });
+
+            stockPilesContainer.addEventListener('click', () => {
+                if (gameOver) return;
+                if (!canDeal()) {
+                    if (stock.length === 0) {
+                        showToast('牌堆已空，无法发牌');
+                    } else {
+                        showToast('存在空列，请先填满所有列再发牌');
+                    }
+                    return;
+                }
+                saveState();
+                dealCards();
+                render();
+                updateStockDisplay();
+                scoreDisplay.textContent = score;
+                completeDisplay.textContent = completed;
+            });
+
+            // 点击空白区域取消选择
+            document.addEventListener('click', (e) => {
+                if (gameOver) return;
+                const clickedOnCard = e.target.closest('.card');
+                const clickedOnColumn = e.target.closest('.column');
+                const clickedOnStock = e.target.closest('#stockPiles');
+                const clickedOnBtn = e.target.closest('button') || e.target.closest('select');
+                if (!clickedOnCard && !clickedOnColumn && !clickedOnStock && !clickedOnBtn &&
+                    selectedColIndex !== null) {
+                    selectedColIndex = null;
+                    selectedCardStartIndex = null;
+                    render();
+                }
+            });
+
+            // 键盘快捷键
+            document.addEventListener('keydown', (e) => {
+                if (gameOver && e.key !== 'n' && e.key !== 'N') return;
+                if (e.ctrlKey && e.key === 'z') {
+                    e.preventDefault();
+                    if (undo()) {
+                        render();
+                        updateStockDisplay();
+                        scoreDisplay.textContent = score;
+                        completeDisplay.textContent = completed;
+                    }
+                }
+                if (e.key === 'Escape') {
+                    selectedColIndex = null;
+                    selectedCardStartIndex = null;
+                    render();
+                }
+            });
+
+            // 窗口大小变化时重新渲染
+            let resizeTimeout;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(() => {
+                    render();
+                }, 300);
+            });
+
+            // ==================== 启动 ====================
+            initGame();
+            console.log('🕷️ 蜘蛛纸牌已就绪');
+            console.log('  - 点击列选中可移动序列，再点击目标列移动');
+            console.log('  - 也可以拖拽牌组进行移动');
+            console.log('  - Ctrl+Z 撤销 | Esc 取消选择');
+            console.log('  - 难度：' + (difficulty === 1 ? '1种花色(简单)' : difficulty === 2 ? '2种花色(中等)' :
+                '4种花色(困难)'));
+        })();
+    </script>
+</body>
+</html>
